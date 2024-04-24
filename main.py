@@ -8,7 +8,6 @@ WIDTH = 800
 WIN = pygame.display.set_mode((WIDTH, WIDTH))
 pygame.display.set_caption("Path Finding Visualizer")
 
-# Define colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
@@ -177,15 +176,27 @@ def a_star_algorithm(draw, grid, start, end):
 
     return False
 
-def random_walk(draw, grid, start, end):
-    while start != end:
-        neighbors = [neighbor for neighbor in start.neighbors if not neighbor.is_barrier()]
-        if neighbors:
-            start = random.choice(neighbors)
-            start.make_path()
-            draw()
-        else:
-            break
+def brute_force_algorithm(draw, grid, start, end):
+    visited = set()
+    queue = [start]
+
+    while queue:
+        current = queue.pop(0)
+        if current == end:
+            reconstruct_path(visited, end, draw)
+            end.make_end()
+            return True
+        visited.add(current)
+        for neighbor in current.neighbors:
+            if neighbor not in visited and not neighbor.is_barrier():
+                queue.append(neighbor)
+                neighbor.make_open()
+        draw()
+        if current != start:
+            current.make_closed()
+
+    return False
+
 
 def reconstruct_path(came_from, current, draw):
     while current in came_from:
@@ -237,21 +248,20 @@ def main():
     run = True
     while run:
         WIN.fill(WHITE)
-        # Draw title
+        
         font = pygame.font.SysFont(None, 36)
         text = font.render("Select Algorithm:", True, BLACK)
         text_rect = text.get_rect(center=(WIDTH // 2, 50))
         WIN.blit(text, text_rect)
 
-        # Draw buttons
         a_star_button = pygame.Rect(100, 150, 200, 50)
         dijkstra_button = pygame.Rect(100, 250, 200, 50)
-        random_walk_button = pygame.Rect(100, 350, 200, 50)
+        brute_force_button = pygame.Rect(100, 350, 200, 50)
         button_colors = [LIGHT_BLUE, LIGHT_GREEN, LIGHT_YELLOW]
 
         pygame.draw.rect(WIN, button_colors[0], a_star_button)
         pygame.draw.rect(WIN, button_colors[1], dijkstra_button)
-        pygame.draw.rect(WIN, button_colors[2], random_walk_button)
+        pygame.draw.rect(WIN, button_colors[2], brute_force_button)
 
         text = font.render("A* Algorithm", True, BLACK)
         text_rect = text.get_rect(center=a_star_button.center)
@@ -261,8 +271,8 @@ def main():
         text_rect = text.get_rect(center=dijkstra_button.center)
         WIN.blit(text, text_rect)
 
-        text = font.render("Random Walk", True, BLACK)
-        text_rect = text.get_rect(center=random_walk_button.center)
+        text = font.render("Brute Force", True, BLACK)
+        text_rect = text.get_rect(center=brute_force_button.center)
         WIN.blit(text, text_rect)
 
         for event in pygame.event.get():
@@ -355,10 +365,11 @@ def main():
                                 if spot == start:
                                     start = None
                                 elif spot == end:
-                                    end = None
-                elif random_walk_button.collidepoint(event.pos):
-                    start = random.choice(random.choice(grid))
-                    end = random.choice(random.choice(grid))
+                                    end = None             
+                elif brute_force_button.collidepoint(event.pos):
+                    start = None
+                    end = None
+                    grid = make_grid(ROWS, WIDTH)
                     while True:
                         draw(WIN, grid, ROWS, WIDTH)
                         for event in pygame.event.get():
@@ -375,7 +386,7 @@ def main():
                                     for row in grid:
                                         for spot in row:
                                             spot.update_neighbors(grid)
-                                    random_walk(lambda: draw(WIN, grid, ROWS, WIDTH), grid, start, end)
+                                    brute_force_algorithm(lambda: draw(WIN, grid, ROWS, WIDTH), grid, start, end)
                                     break
                             if pygame.mouse.get_pressed()[0]:  # LEFT
                                 pos = pygame.mouse.get_pos()
