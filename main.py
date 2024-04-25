@@ -34,48 +34,57 @@ class Spot:
         self.width = width
         self.total_rows = total_rows
 
+    # Returns the row and column indices of the spot as a tuple (row, col).    
     def get_pos(self):
         return self.row, self.col
-
+    # Returns True if the spot is closed (colored red), indicating that it has been visited and evaluated during pathfinding.
     def is_closed(self):
         return self.color == RED
-
+    #  Returns True if the spot is open (colored green), indicating that it is currently being considered for evaluation during pathfinding.
     def is_open(self):
         return self.color == GREEN
-
+    # Returns True if the spot is a barrier (colored black), indicating that it is an obstacle and cannot be traversed
     def is_barrier(self):
         return self.color == BLACK
-
+    # Returns True if the spot is the start point (colored orange).
     def is_start(self):
         return self.color == ORANGE
-
+    # Returns True if the spot is the end point (colored turquoise).
     def is_end(self):
         return self.color == TURQUOISE
-
+    # Resets the color of the spot to white, effectively clearing it.
     def reset(self):
         self.color = WHITE
-
+    # Sets the color of the spot to orange, marking it as the start point.
     def make_start(self):
         self.color = ORANGE
-
+    # Sets the color of the spot to red, indicating that it has been visited and evaluated during pathfinding.
     def make_closed(self):
         self.color = RED
-
+    #  Sets the color of the spot to green, indicating that it is currently being considered for evaluation during pathfinding.
     def make_open(self):
         self.color = GREEN
-
+    # Sets the color of the spot to black, indicating that it is an obstacle.
     def make_barrier(self):
         self.color = BLACK
-
+    #  Sets the color of the spot to turquoise, marking it as the end point.
     def make_end(self):
         self.color = TURQUOISE
-
+    # Sets the color of the spot to purple, indicating that it is part of the final path found by the algorithm.
     def make_path(self):
         self.color = PURPLE
 
+    #Draws the spot on the Pygame window win with its current color, position, and size. 
+    #This method is responsible for visually representing the spot on the grid.
     def draw(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.width))
-
+    
+    """
+    This method updates the list of neighbors for the current spot (self).
+    It takes the grid as input, which is a 2D list representing the entire grid of spots. 
+    It first clears the current list of neighbors (self.neighbors = []). Then, it checks the neighboring spots in four directions (up, down, left, right) to see if they are barriers.
+    If a neighboring spot is not a barrier, it appends that spot to the list of neighbors.
+    """
     def update_neighbors(self, grid):
         self.neighbors = []
         if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier():  # DOWN
@@ -188,8 +197,12 @@ def a_star_algorithm(draw, grid, start, end):
     open_set = PriorityQueue()
     open_set.put((0, count, start))
     came_from = {}
+    # Dictionary to store the cost of getting from the start node to any given node.
     g_score = {spot: float("inf") for row in grid for spot in row}
     g_score[start] = 0
+    # Dictionary to store the estimated total cost from the start node to the goal node passing through the given node.
+    #The g_score and f_score dictionaries are initialized with all spots in the grid, with each spot having a 
+    #default value of infinity except for the start node, which has a cost of 0. 
     f_score = {spot: float("inf") for row in grid for spot in row}
     f_score[start] = h(start.get_pos(), end.get_pos())
 
@@ -318,26 +331,35 @@ Note: The code assumes that the necessary functions for the algorithms
 (e.g., a_star_algorithm, dijkstra_algorithm, brute_force_algorithm) and other helper functions (e.g., make_grid, draw, get_clicked_pos) are defined elsewhere.
 """
 def main():
+    # Set the number of rows in the grid
     ROWS = 50
+    
+    # Create the grid with the specified number of rows and window width
     grid = make_grid(ROWS, WIDTH)
 
+    # Initialize variables for the start and end nodes
     start = None
     end = None
 
+    # Main loop: runs as long as the 'run' variable is True
     run = True
     while run:
+        # Fill the window with a white background
         WIN.fill(WHITE)
         
+        # Set up font and render text for the algorithm selection prompt
         font = pygame.font.SysFont(None, 36)
         text = font.render("Select Algorithm:", True, BLACK)
         text_rect = text.get_rect(center=(WIDTH // 2, 50))
         WIN.blit(text, text_rect)
 
+        # Define rectangles for algorithm selection buttons
         a_star_button = pygame.Rect(100, 150, 200, 50)
         dijkstra_button = pygame.Rect(100, 250, 200, 50)
         brute_force_button = pygame.Rect(100, 350, 200, 50)
         button_colors = [LIGHT_BLUE, LIGHT_GREEN, LIGHT_YELLOW]
 
+        # Draw algorithm selection buttons and labels
         pygame.draw.rect(WIN, button_colors[0], a_star_button)
         pygame.draw.rect(WIN, button_colors[1], dijkstra_button)
         pygame.draw.rect(WIN, button_colors[2], brute_force_button)
@@ -354,17 +376,26 @@ def main():
         text_rect = text.get_rect(center=brute_force_button.center)
         WIN.blit(text, text_rect)
 
+        # Event handling loop: handles user input events
         for event in pygame.event.get():
+            # Check if the user closes the window
             if event.type == pygame.QUIT:
                 run = False
 
+            # Check if the user clicks the mouse
             if event.type == pygame.MOUSEBUTTONDOWN:
+                # Check if the click is inside the A* Algorithm button
                 if a_star_button.collidepoint(event.pos):
+                    # Reset start and end nodes, and create a new grid
                     start = None
                     end = None
                     grid = make_grid(ROWS, WIDTH)
+                    
+                    # Loop for handling user input until algorithm execution or window closure
                     while True:
                         draw(WIN, grid, ROWS, WIDTH)
+                        
+                        # Event handling within the loop
                         for event in pygame.event.get():
                             if event.type == pygame.QUIT:
                                 pygame.quit()
@@ -402,7 +433,9 @@ def main():
                                     start = None
                                 elif spot == end:
                                     end = None
+                # Check if the click is inside the Dijkstra's Algorithm button
                 elif dijkstra_button.collidepoint(event.pos):
+                    # (Same process as for A* Algorithm button, but with Dijkstra's algorithm)
                     start = None
                     end = None
                     grid = make_grid(ROWS, WIDTH)
@@ -444,8 +477,10 @@ def main():
                                 if spot == start:
                                     start = None
                                 elif spot == end:
-                                    end = None             
+                                    end = None
+                # Check if the click is inside the Brute Force button
                 elif brute_force_button.collidepoint(event.pos):
+                    # (Same process as for A* Algorithm button, but with Brute Force algorithm)
                     start = None
                     end = None
                     grid = make_grid(ROWS, WIDTH)
@@ -489,9 +524,13 @@ def main():
                                 elif spot == end:
                                     end = None
 
+        # Update the display
         pygame.display.update()
 
+    # Quit Pygame when the main loop exits
     pygame.quit()
 
+# Check if the script is being run as the main module
 if __name__ == "__main__":
     main()
+
