@@ -7,3 +7,6 @@ The Pathfinding Algorithm Visualization project is a Python-based application de
 Grid Generation: The application generates a square grid of variable size. Each grid cell, called a "spot," can represent a start point, end point, barrier, or pathway.
 User Interaction: Users can select the start and end points on the grid, create barriers, and choose which algorithm to use for pathfinding.
 Algorithm Visualization: The application visually demonstrates the pathfinding process for each algorithm, highlighting the open and closed nodes, the final path, and the obstacles.
+
+Flow : 
+![image](https://github.com/yryuvraj/path_finder/assets/86550457/ed1c8cce-4010-4006-990e-fdc7a0af1860)
