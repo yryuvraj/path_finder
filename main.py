@@ -39,48 +39,57 @@ class Spot:
         self.width = width
         self.total_rows = total_rows
 
+    # Returns the row and column indices of the spot as a tuple (row, col).    
     def get_pos(self):
         return self.row, self.col
-
+    # Returns True if the spot is closed (colored red), indicating that it has been visited and evaluated during pathfinding.
     def is_closed(self):
         return self.color == RED
-
+    #  Returns True if the spot is open (colored green), indicating that it is currently being considered for evaluation during pathfinding.
     def is_open(self):
         return self.color == GREEN
-
+    # Returns True if the spot is a barrier (colored black), indicating that it is an obstacle and cannot be traversed
     def is_barrier(self):
         return self.color == BLACK
-
+    # Returns True if the spot is the start point (colored orange).
     def is_start(self):
         return self.color == ORANGE
-
+    # Returns True if the spot is the end point (colored turquoise).
     def is_end(self):
         return self.color == TURQUOISE
-
+    # Resets the color of the spot to white, effectively clearing it.
     def reset(self):
         self.color = WHITE
-
+    # Sets the color of the spot to orange, marking it as the start point.
     def make_start(self):
         self.color = ORANGE
-
+    # Sets the color of the spot to red, indicating that it has been visited and evaluated during pathfinding.
     def make_closed(self):
         self.color = RED
-
+    #  Sets the color of the spot to green, indicating that it is currently being considered for evaluation during pathfinding.
     def make_open(self):
         self.color = GREEN
-
+    # Sets the color of the spot to black, indicating that it is an obstacle.
     def make_barrier(self):
         self.color = BLACK
-
+    #  Sets the color of the spot to turquoise, marking it as the end point.
     def make_end(self):
         self.color = TURQUOISE
-
+    # Sets the color of the spot to purple, indicating that it is part of the final path found by the algorithm.
     def make_path(self):
         self.color = PURPLE
 
+    #Draws the spot on the Pygame window win with its current color, position, and size. 
+    #This method is responsible for visually representing the spot on the grid.
     def draw(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.width))
-
+    
+    """
+    This method updates the list of neighbors for the current spot (self).
+    It takes the grid as input, which is a 2D list representing the entire grid of spots. 
+    It first clears the current list of neighbors (self.neighbors = []). Then, it checks the neighboring spots in four directions (up, down, left, right) to see if they are barriers.
+    If a neighboring spot is not a barrier, it appends that spot to the list of neighbors.
+    """
     def update_neighbors(self, grid):
         self.neighbors = []
         # DOWN
@@ -180,9 +189,11 @@ def dijkstra_algorithm_timer(draw_func, grid, start, end):
     open_set = PriorityQueue()
     open_set.put((0, count, start))
     came_from = {}
+    # Dictionary to store the cost of getting from the start node to any given node.
     g_score = {spot: float("inf") for row in grid for spot in row}
     g_score[start] = 0
-    start_time = time.time()
+    f_score = {spot: float("inf") for row in grid for spot in row}
+    f_score[start] = h(start.get_pos(), end.get_pos())
 
     while not open_set.empty():
         elapsed = time.time() - start_time
@@ -253,25 +264,32 @@ def get_clicked_pos(pos, rows, width):
     return row, col
 
 def main():
+    # Set the number of rows in the grid
     ROWS = 50
+    
+    # Create the grid with the specified number of rows and window width
     grid = make_grid(ROWS, WIDTH)
+
     start = None
     end = None
 
+    # Main loop: runs as long as the 'run' variable is True
     run = True
     while run:
+        # Fill the window with a white background
         WIN.fill(WHITE)
+        
         font = pygame.font.SysFont(None, 36)
         title_text = font.render("Select Algorithm:", True, BLACK)
         title_rect = title_text.get_rect(center=(WIDTH // 2, 50))
         WIN.blit(title_text, title_rect)
 
-        # Define buttons for the three algorithms
         a_star_button = pygame.Rect(100, 150, 200, 50)
         dijkstra_button = pygame.Rect(100, 250, 200, 50)
         brute_force_button = pygame.Rect(100, 350, 200, 50)
         button_colors = [LIGHT_BLUE, LIGHT_GREEN, LIGHT_YELLOW]
 
+        # Draw algorithm selection buttons and labels
         pygame.draw.rect(WIN, button_colors[0], a_star_button)
         pygame.draw.rect(WIN, button_colors[1], dijkstra_button)
         pygame.draw.rect(WIN, button_colors[2], brute_force_button)
@@ -288,18 +306,23 @@ def main():
         brute_rect = brute_text.get_rect(center=brute_force_button.center)
         WIN.blit(brute_text, brute_rect)
 
+        # Event handling loop: handles user input events
         for event in pygame.event.get():
+            # Check if the user closes the window
             if event.type == pygame.QUIT:
                 run = False
 
+            # Check if the user clicks the mouse
             if event.type == pygame.MOUSEBUTTONDOWN:
-                # A* Algorithm Branch
                 if a_star_button.collidepoint(event.pos):
+                    # Reset start and end nodes, and create a new grid
                     start = None
                     end = None
                     grid = make_grid(ROWS, WIDTH)
+                    
+                    # Loop for handling user input until algorithm execution or window closure
                     while True:
-                        draw_with_timer(WIN, grid, ROWS, WIDTH, 0)
+                        draw(WIN, grid, ROWS, WIDTH)
                         for event in pygame.event.get():
                             if event.type == pygame.QUIT:
                                 pygame.quit()
@@ -319,32 +342,29 @@ def main():
                                     a_star_algorithm_timer(lambda t: draw_with_timer(WIN, grid, ROWS, WIDTH, t), grid, start, end)
                                     time.sleep(1)
                                     break
-                        if pygame.mouse.get_pressed()[0]:
-                            pos = pygame.mouse.get_pos()
-                            row, col = get_clicked_pos(pos, ROWS, WIDTH)
-                            spot = grid[row][col]
-                            if not start and spot != end:
-                                start = spot
-                                start.make_start()
-                            elif not end and spot != start:
-                                end = spot
-                                end.make_end()
-                            elif spot != end and spot != start:
-                                spot.make_barrier()
-                        elif pygame.mouse.get_pressed()[2]:
-                            pos = pygame.mouse.get_pos()
-                            row, col = get_clicked_pos(pos, ROWS, WIDTH)
-                            spot = grid[row][col]
-                            spot.reset()
-                            if spot == start:
-                                start = None
-                            elif spot == end:
-                                end = None
-                        pygame.display.update()
-                    # End of A* branch
-
-                # Dijkstra Algorithm Branch
+                            if pygame.mouse.get_pressed()[0]:  # LEFT
+                                pos = pygame.mouse.get_pos()
+                                row, col = get_clicked_pos(pos, ROWS, WIDTH)
+                                spot = grid[row][col]
+                                if not start and spot != end:
+                                    start = spot
+                                    start.make_start()
+                                elif not end and spot != start:
+                                    end = spot
+                                    end.make_end()
+                                elif spot != end and spot != start:
+                                    spot.make_barrier()
+                            elif pygame.mouse.get_pressed()[2]:  # RIGHT
+                                pos = pygame.mouse.get_pos()
+                                row, col = get_clicked_pos(pos, ROWS, WIDTH)
+                                spot = grid[row][col]
+                                spot.reset()
+                                if spot == start:
+                                    start = None
+                                elif spot == end:
+                                    end = None
                 elif dijkstra_button.collidepoint(event.pos):
+                    # (Same process as for A* Algorithm button, but with Dijkstra's algorithm)
                     start = None
                     end = None
                     grid = make_grid(ROWS, WIDTH)
@@ -367,31 +387,29 @@ def main():
                                     dijkstra_algorithm_timer(lambda t: draw_with_timer(WIN, grid, ROWS, WIDTH, t), grid, start, end)
                                     time.sleep(1)
                                     break
-                        if pygame.mouse.get_pressed()[0]:
-                            pos = pygame.mouse.get_pos()
-                            row, col = get_clicked_pos(pos, ROWS, WIDTH)
-                            spot = grid[row][col]
-                            if not start and spot != end:
-                                start = spot
-                                start.make_start()
-                            elif not end and spot != start:
-                                end = spot
-                                end.make_end()
-                            elif spot != end and spot != start:
-                                spot.make_barrier()
-                        elif pygame.mouse.get_pressed()[2]:
-                            pos = pygame.mouse.get_pos()
-                            row, col = get_clicked_pos(pos, ROWS, WIDTH)
-                            spot = grid[row][col]
-                            spot.reset()
-                            if spot == start:
-                                start = None
-                            elif spot == end:
-                                end = None
-                        pygame.display.update()
-
-                # Brute Force Algorithm Branch
+                            if pygame.mouse.get_pressed()[0]:  # LEFT
+                                pos = pygame.mouse.get_pos()
+                                row, col = get_clicked_pos(pos, ROWS, WIDTH)
+                                spot = grid[row][col]
+                                if not start and spot != end:
+                                    start = spot
+                                    start.make_start()
+                                elif not end and spot != start:
+                                    end = spot
+                                    end.make_end()
+                                elif spot != end and spot != start:
+                                    spot.make_barrier()
+                            elif pygame.mouse.get_pressed()[2]:  # RIGHT
+                                pos = pygame.mouse.get_pos()
+                                row, col = get_clicked_pos(pos, ROWS, WIDTH)
+                                spot = grid[row][col]
+                                spot.reset()
+                                if spot == start:
+                                    start = None
+                                elif spot == end:
+                                    end = None             
                 elif brute_force_button.collidepoint(event.pos):
+                    # (Same process as for A* Algorithm button, but with Brute Force algorithm)
                     start = None
                     end = None
                     grid = make_grid(ROWS, WIDTH)
@@ -437,9 +455,13 @@ def main():
                                 end = None
                         pygame.display.update()
 
+        # Update the display
         pygame.display.update()
 
+    # Quit Pygame when the main loop exits
     pygame.quit()
 
+# Check if the script is being run as the main module
 if __name__ == "__main__":
     main()
+
